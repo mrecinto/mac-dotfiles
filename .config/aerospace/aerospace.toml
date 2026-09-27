@@ -17,7 +17,7 @@ start-at-login = true
 # ------------------------------------------------------------
 
 alt-tab = 'workspace-back-and-forth'
-
+alt-shift-m = 'move-workspace-to-monitor --wrap-around next'
 
 # ------------------------------------------------------------
 # Toggle floating
