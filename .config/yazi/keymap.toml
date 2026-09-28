@@ -1,0 +1,4 @@
+[mgr]
+prepend_keymap = [
+  { on = "<C-o>", run = "shell --confirm 'open .'", desc = "Open the current directory in Finder" },
+]
