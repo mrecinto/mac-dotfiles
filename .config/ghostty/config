@@ -1,3 +1,4 @@
 font-size = 14
 window-padding-x = 10
 window-padding-y = 10
+theme = light:Catppuccin Latte,dark:Catppuccin Mocha

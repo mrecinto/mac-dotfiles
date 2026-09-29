@@ -1,40 +1,92 @@
 config-version = 2
 
-# Start AeroSpace automatically
 start-at-login = true
+
+
+# ============================================================
+# CALLBACKS
+# ============================================================
+
+on-focused-monitor-changed = ['move-mouse window-lazy-center']
+
+# Record a workspace ONLY if it is one of our specials:
+# W A S D I O
+#
+# This catches workspace changes from:
+# - Option + WASDIO
+# - Command + Tab
+# - clicking/focusing apps
+# - other AeroSpace workspace changes
+exec-on-workspace-change = [
+    '/bin/bash',
+    '-c',
+    '~/.config/aerospace/scripts/record-special.sh "$AEROSPACE_FOCUSED_WORKSPACE"'
+]
+
+
 # ============================================================
 # MAIN KEYBINDINGS
 # ============================================================
 
-on-focused-monitor-changed = ['move-mouse window-lazy-center']
 [mode.main.binding]
+
+
+# ============================================================
+# CORE
+# ============================================================
 
 alt-q = 'exec-and-forget open -na Ghostty'
 alt-shift-q = 'close'
-# ------------------------------------------------------------
-# Previous workspace
-# Option + Tab
-# ------------------------------------------------------------
 
+alt-v = 'layout floating tiling'
+
+
+# ============================================================
+# WORKSPACE HISTORY
+# ============================================================
+
+# Option + Tab
+#
+# Normal AeroSpace previous workspace.
+#
+# Example:
+#
+# 2 -> D
+# Option+Tab -> 2
+# Option+Tab -> D
 alt-tab = 'workspace-back-and-forth'
+
+
+# Option + `
+#
+# Toggle current workspace <-> last SPECIAL workspace.
+#
+# Example:
+#
+# 2 -> D -> 4 -> 7
+#
+# Last special is still D.
+#
+# Option+` -> D
+# Option+` -> 7
+alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/toggle-special.sh'
+
+
+# ============================================================
+# MOVE CURRENT WORKSPACE TO NEXT MONITOR
+# ============================================================
+
 alt-shift-m = [
     'move-workspace-to-monitor next --wrap-around',
     'focus-monitor next --wrap-around',
     'move-mouse window-lazy-center',
 ]
-# ------------------------------------------------------------
-# Toggle floating
-# Option + V
-# ------------------------------------------------------------
-
-alt-v = 'layout floating tiling'
 
 
-# ------------------------------------------------------------
-# Focus windows
+# ============================================================
+# FOCUS WINDOWS
 # Option + H/J/K/L
-# Cursor follows keyboard focus
-# ------------------------------------------------------------
+# ============================================================
 
 alt-h = [
     'focus --boundaries all-monitors-outer-frame left',
@@ -57,10 +109,10 @@ alt-l = [
 ]
 
 
-# ------------------------------------------------------------
-# Reorient/rearrange tiled windows
+# ============================================================
+# MOVE WINDOWS
 # Option + Shift + H/J/K/L
-# ------------------------------------------------------------
+# ============================================================
 
 alt-shift-h = 'move left'
 alt-shift-j = 'move down'
@@ -68,26 +120,24 @@ alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
 
-# ------------------------------------------------------------
-# Move WINDOW between monitors
-# Option + Command + Shift + H/L
-# ------------------------------------------------------------
+# ============================================================
+# MOVE WINDOW BETWEEN MONITORS
+# ============================================================
 
 alt-cmd-shift-h = 'move-node-to-monitor left'
 alt-cmd-shift-l = 'move-node-to-monitor right'
 
 
-# ------------------------------------------------------------
-# Move WORKSPACE between monitors
-# Option + Command + H/L
-# ------------------------------------------------------------
+# ============================================================
+# MOVE WORKSPACE BETWEEN MONITORS
+# ============================================================
 
 alt-cmd-h = 'move-workspace-to-monitor left'
 alt-cmd-l = 'move-workspace-to-monitor right'
 
 
 # ============================================================
-# NAMED WORKSPACES
+# SPECIAL WORKSPACES
 # Option + W/A/S/D/I/O
 # ============================================================
 
@@ -99,10 +149,9 @@ alt-i = 'workspace I'
 alt-o = 'workspace O'
 
 
-# ------------------------------------------------------------
-# Move window to named workspace
-# Option + Shift + W/A/S/D/I/O
-# ------------------------------------------------------------
+# ============================================================
+# MOVE WINDOW TO SPECIAL WORKSPACE
+# ============================================================
 
 alt-shift-w = 'move-node-to-workspace W'
 alt-shift-a = 'move-node-to-workspace A'
@@ -114,8 +163,6 @@ alt-shift-o = 'move-node-to-workspace O'
 
 # ============================================================
 # NUMBERED WORKSPACES
-# Option + 1-9/0
-# 0 = workspace 10
 # ============================================================
 
 alt-1 = 'workspace 1'
@@ -130,10 +177,9 @@ alt-9 = 'workspace 9'
 alt-0 = 'workspace 10'
 
 
-# ------------------------------------------------------------
-# Move window to numbered workspace
-# Option + Shift + 1-9/0
-# ------------------------------------------------------------
+# ============================================================
+# MOVE WINDOW TO NUMBERED WORKSPACE
+# ============================================================
 
 alt-shift-1 = 'move-node-to-workspace 1'
 alt-shift-2 = 'move-node-to-workspace 2'

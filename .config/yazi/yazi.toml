@@ -1,0 +1,47 @@
+[opener]
+nvim = [
+  { run = "$EDITOR %s", block = true, desc = "Neovim" }
+]
+
+xournalpp = [
+  { run = 'open -a "Xournal++" %s', orphan = true, desc = "Xournal++" }
+]
+
+zathura = [
+  { run = "zathura %s", orphan = true, desc = "Zathura" }
+]
+
+[open]
+rules = [
+  # Empty files
+  { mime = "inode/x-empty", use = "nvim" },
+
+  # PDFs
+  { mime = "application/pdf", use = ["zathura", "xournalpp"] },
+  { url = "*.pdf", use = "zathura" },
+
+  # Xournal++
+  { url = "*.xopp", use = "xournalpp" },
+
+  # Text files
+  { mime = "text/*", use = "nvim" },
+  { url = "*.fish", use = "nvim" },
+  { url = "*.md", use = "nvim" },
+
+  # Typst
+  { mime = "application/x-typst", use = "nvim" },
+  { mime = "text/x-typst", use = "nvim" },
+  { url = "*.typ", use = "nvim" },
+
+  # Programming/config files
+  { url = "*.lua", use = "nvim" },
+  { url = "*.cpp", use = "nvim" },
+  { url = "*.h", use = "nvim" },
+  { url = "*.py", use = "nvim" },
+  { url = "*.rs", use = "nvim" },
+  { url = "*.json", use = "nvim" },
+  { url = "*.toml", use = "nvim" },
+
+  # Final fallback
+  { url = "*", use = "nvim" },
+]
