@@ -9,20 +9,6 @@ start-at-login = true
 
 on-focused-monitor-changed = ['move-mouse window-lazy-center']
 
-# Record a workspace ONLY if it is one of our specials:
-# W A S D I O
-#
-# This catches workspace changes from:
-# - Option + WASDIO
-# - Command + Tab
-# - clicking/focusing apps
-# - other AeroSpace workspace changes
-exec-on-workspace-change = [
-    '/bin/bash',
-    '-c',
-    '~/.config/aerospace/scripts/record-special.sh "$AEROSPACE_FOCUSED_WORKSPACE"'
-]
-
 
 # ============================================================
 # MAIN KEYBINDINGS
@@ -35,41 +21,62 @@ exec-on-workspace-change = [
 # CORE
 # ============================================================
 
-alt-q = 'exec-and-forget open -na Ghostty'
+# Open new Ghostty window
+alt-q = '''exec-and-forget osascript -e 'tell application "Ghostty" to new window' '''
+
+# Close current window
 alt-shift-q = 'close'
 
+# Toggle floating / tiling
 alt-v = 'layout floating tiling'
+
+# Open new Zen window
+alt-c = 'exec-and-forget open -na "Zen"'
 
 
 # ============================================================
 # WORKSPACE HISTORY
+#
+# Option + Tab = last SPECIAL workspace
+# Option + `   = previous NUMBERED workspace
 # ============================================================
 
+
+# ------------------------------------------------------------
 # Option + Tab
-#
-# Normal AeroSpace previous workspace.
-#
-# Example:
-#
-# 2 -> D
-# Option+Tab -> 2
-# Option+Tab -> D
-alt-tab = 'workspace-back-and-forth'
-
-
-# Option + `
 #
 # Toggle current workspace <-> last SPECIAL workspace.
 #
 # Example:
 #
-# 2 -> D -> 4 -> 7
+# 2 -> D -> 4 -> W -> 7
 #
-# Last special is still D.
+# Option+Tab -> W
+# Option+Tab -> 7
+# Option+Tab -> W
+# ------------------------------------------------------------
+
+alt-tab = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh toggle-special'
+
+
+# ------------------------------------------------------------
+# Option + `
 #
-# Option+` -> D
+# Toggle between the two most recently used NUMBERED
+# workspaces.
+#
+# Special workspaces are ignored.
+#
+# Example:
+#
+# 2 -> 4 -> D -> W -> 7
+#
+# Option+` -> 4
 # Option+` -> 7
-alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/toggle-special.sh'
+# Option+` -> 4
+# ------------------------------------------------------------
+
+alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh previous-numbered'
 
 
 # ============================================================
@@ -139,18 +146,22 @@ alt-cmd-l = 'move-workspace-to-monitor right'
 # ============================================================
 # SPECIAL WORKSPACES
 # Option + W/A/S/D/I/O
+#
+# These update SPECIAL history only.
+# They do NOT modify numbered history.
 # ============================================================
 
-alt-w = 'workspace W'
-alt-a = 'workspace A'
-alt-s = 'workspace S'
-alt-d = 'workspace D'
-alt-i = 'workspace I'
-alt-o = 'workspace O'
+alt-w = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special W'
+alt-a = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special A'
+alt-s = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special S'
+alt-d = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special D'
+alt-i = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special I'
+alt-o = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special O'
 
 
 # ============================================================
 # MOVE WINDOW TO SPECIAL WORKSPACE
+# Option + Shift + W/A/S/D/I/O
 # ============================================================
 
 alt-shift-w = 'move-node-to-workspace W'
@@ -163,22 +174,26 @@ alt-shift-o = 'move-node-to-workspace O'
 
 # ============================================================
 # NUMBERED WORKSPACES
+# Option + 1-0
+#
+# These update NUMBERED history only.
 # ============================================================
 
-alt-1 = 'workspace 1'
-alt-2 = 'workspace 2'
-alt-3 = 'workspace 3'
-alt-4 = 'workspace 4'
-alt-5 = 'workspace 5'
-alt-6 = 'workspace 6'
-alt-7 = 'workspace 7'
-alt-8 = 'workspace 8'
-alt-9 = 'workspace 9'
-alt-0 = 'workspace 10'
+alt-1 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 1'
+alt-2 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 2'
+alt-3 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 3'
+alt-4 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 4'
+alt-5 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 5'
+alt-6 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 6'
+alt-7 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 7'
+alt-8 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 8'
+alt-9 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 9'
+alt-0 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 10'
 
 
 # ============================================================
 # MOVE WINDOW TO NUMBERED WORKSPACE
+# Option + Shift + 1-0
 # ============================================================
 
 alt-shift-1 = 'move-node-to-workspace 1'
