@@ -1,4 +1,39 @@
+# ============================================================
+# APPEARANCE
+# ============================================================
+
 font-size = 14
+
 window-padding-x = 10
 window-padding-y = 10
+
 theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+
+
+# ============================================================
+# CMD + A
+# ============================================================
+
+keybind = cmd+a=unbind
+keybind = cmd+a=text:\x1ba
+
+
+# ============================================================
+# CTRL + NUMBER → TMUX TAB
+#
+# \x02 = Ctrl+B (tmux prefix)
+#
+# Ghostty translates Ctrl+number into:
+#
+# Ctrl+B → number
+# ============================================================
+
+keybind = ctrl+digit1=text:\x021
+keybind = ctrl+digit2=text:\x022
+keybind = ctrl+digit3=text:\x023
+keybind = ctrl+digit4=text:\x024
+keybind = ctrl+digit5=text:\x025
+keybind = ctrl+digit6=text:\x026
+keybind = ctrl+digit7=text:\x027
+keybind = ctrl+digit8=text:\x028
+keybind = ctrl+digit9=text:\x029
