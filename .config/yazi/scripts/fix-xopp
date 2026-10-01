@@ -1,0 +1,17 @@
+#!/bin/bash
+
+TEMPLATE="$HOME/.config/yazi/templates/default.xopp"
+FILE="$1"
+
+if [ -z "$FILE" ]; then
+    exit 1
+fi
+
+if [ ! -f "$TEMPLATE" ]; then
+    exit 1
+fi
+
+# Only replace completely empty .xopp files
+if [[ "$FILE" == *.xopp ]] && [ ! -s "$FILE" ]; then
+    cp -f "$TEMPLATE" "$FILE"
+fi

@@ -1,27 +1,30 @@
 [opener]
+
 nvim = [
   { run = "$EDITOR %s", block = true, desc = "Neovim" }
 ]
 
 xournalpp = [
-  { run = 'open -a "Xournal++" %s', orphan = true, desc = "Xournal++" }
+  { run = '"$HOME/.config/yazi/scripts/fix-xopp" %s1 && open -a "Xournal++" %s1', orphan = true, desc = "Xournal++" }
 ]
 
 zathura = [
   { run = "zathura %s", orphan = true, desc = "Zathura" }
 ]
 
+
 [open]
+
 rules = [
+  # Xournal++ — MUST be before inode/x-empty
+  { url = "*.xopp", use = "xournalpp" },
+
   # Empty files
   { mime = "inode/x-empty", use = "nvim" },
 
   # PDFs
   { mime = "application/pdf", use = ["zathura", "xournalpp"] },
   { url = "*.pdf", use = "zathura" },
-
-  # Xournal++
-  { url = "*.xopp", use = "xournalpp" },
 
   # Text files
   { mime = "text/*", use = "nvim" },
