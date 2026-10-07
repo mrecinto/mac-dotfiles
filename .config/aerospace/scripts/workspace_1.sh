@@ -1,9 +1,6 @@
 #!/bin/bash
 
-STATE_DIR="/tmp/aerospace-workspace-state-$USER"
-GLOBAL_STATE="$STATE_DIR/global"
-
-mkdir -p "$STATE_DIR"
+STATE="/tmp/aerospace-workspace-state-$USER"
 
 action="$1"
 target="$2"
@@ -15,14 +12,6 @@ target="$2"
 
 get_current_workspace() {
     aerospace list-workspaces --focused 2>/dev/null | head -n 1
-}
-
-get_current_monitor() {
-    aerospace list-monitors \
-        --focused \
-        --format '%{monitor-id}' \
-        2>/dev/null |
-        head -n 1
 }
 
 is_numbered() {
@@ -49,90 +38,69 @@ is_special() {
 
 
 # ============================================================
-# GLOBAL NUMBERED HISTORY
-# ============================================================
-
-load_global_state() {
-    current_numbered=""
-    previous_numbered=""
-
-    if [ -f "$GLOBAL_STATE" ]; then
-        source "$GLOBAL_STATE"
-    fi
-}
-
-save_global_state() {
-    {
-        echo "current_numbered=${current_numbered:-}"
-        echo "previous_numbered=${previous_numbered:-}"
-    } > "$GLOBAL_STATE"
-}
-
-
-# ============================================================
-# PER-MONITOR SPECIAL HISTORY
+# STATE
 #
-# Each monitor stores:
+# current_numbered
+#     Most recently used numbered workspace.
+#
+# previous_numbered
+#     Numbered workspace before current_numbered.
 #
 # last_special
+#     Most recently used lettered workspace.
+#
 # special_return
+#     Workspace underneath the current special overlay.
 #
 # Example:
 #
-# Monitor 1:
-#   2 -> S -> D
-#   special_return = 2
+#     2 -> 7 -> S -> D
 #
-# Monitor 2:
-#   10 -> W
-#   special_return = 10
+# current_numbered  = 7
+# previous_numbered = 2
+# last_special      = D
+# special_return    = 7
 #
-# Same-letter and Option+Tab BOTH return to special_return.
+# Option+Tab:
+#     D <-> 7
+#
+# Option+`:
+#     7 <-> 2
 # ============================================================
 
-monitor_state_file() {
-    echo "$STATE_DIR/monitor-$1"
-}
-
-load_monitor_state() {
-    monitor_id="$1"
-
-    last_special=""
-    special_return=""
-
-    file="$(monitor_state_file "$monitor_id")"
-
-    if [ -f "$file" ]; then
-        source "$file"
-    fi
-}
-
-save_monitor_state() {
-    monitor_id="$1"
-
-    file="$(monitor_state_file "$monitor_id")"
-
+save_state() {
     {
+        echo "current_numbered=${current_numbered:-}"
+        echo "previous_numbered=${previous_numbered:-}"
         echo "last_special=${last_special:-}"
         echo "special_return=${special_return:-}"
-    } > "$file"
+    } > "$STATE"
 }
 
 
 # ============================================================
-# INITIAL STATE
+# LOAD STATE
 # ============================================================
 
 current_workspace="$(get_current_workspace)"
-current_monitor="$(get_current_monitor)"
 
-load_global_state
+current_numbered=""
+previous_numbered=""
+last_special=""
+special_return=""
 
-if [ -z "$current_numbered" ] &&
-   is_numbered "$current_workspace"; then
+if [ -f "$STATE" ]; then
+    source "$STATE"
+fi
 
+
+# ============================================================
+# INITIALIZE
+# ============================================================
+
+if [ -z "$current_numbered" ] && is_numbered "$current_workspace"; then
     current_numbered="$current_workspace"
-    save_global_state
+    save_state
 fi
 
 
@@ -145,7 +113,11 @@ case "$action" in
 
     # ========================================================
     # NUMBERED WORKSPACE
+    #
     # Option + 1-0
+    #
+    # Updates numbered history.
+    # Special workspaces do not count.
     # ========================================================
 
     numbered)
@@ -155,11 +127,23 @@ case "$action" in
         fi
 
 
+        # ----------------------------------------------------
+        # Coming from another numbered workspace
+        # ----------------------------------------------------
+
         if is_numbered "$current_workspace"; then
 
             if [ "$current_workspace" != "$target" ]; then
                 previous_numbered="$current_workspace"
             fi
+
+
+        # ----------------------------------------------------
+        # Coming from a special workspace
+        #
+        # current_numbered is still the numbered workspace
+        # that was active underneath the special.
+        # ----------------------------------------------------
 
         elif is_special "$current_workspace"; then
 
@@ -173,7 +157,7 @@ case "$action" in
 
         current_numbered="$target"
 
-        save_global_state
+        save_state
 
         aerospace workspace "$target"
         ;;
@@ -181,26 +165,26 @@ case "$action" in
 
     # ========================================================
     # SPECIAL WORKSPACE
+    #
     # Option + W/A/S/D/I/O
+    #
+    # The special workspace is SUMMONED to whichever monitor
+    # is currently focused.
     # ========================================================
 
     special)
+
 
         # ----------------------------------------------------
         # SAME SPECIAL AGAIN
         #
         # Example:
         #
-        # Monitor 1:
-        # 2 -> S
-        # Option+S -> 2
-        #
-        # Uses THIS monitor's special_return.
+        # 7 -> S
+        # S -> Option+S -> 7
         # ----------------------------------------------------
 
         if [ "$current_workspace" = "$target" ]; then
-
-            load_monitor_state "$current_monitor"
 
             if [ -z "$special_return" ]; then
                 exit 0
@@ -215,29 +199,22 @@ case "$action" in
         # ----------------------------------------------------
         # NUMBERED -> SPECIAL
         #
-        # Establish a new per-monitor return point.
+        # Establish the workspace underneath the overlay.
         #
         # Example:
         #
-        # Monitor 2:
-        # 10 -> D
+        # 7 -> S
         #
-        # special_return = 10
+        # special_return = 7
         # ----------------------------------------------------
 
         if is_numbered "$current_workspace"; then
 
-            load_monitor_state "$current_monitor"
-
+            current_numbered="$current_workspace"
             special_return="$current_workspace"
             last_special="$target"
 
-            save_monitor_state "$current_monitor"
-
-
-            current_numbered="$current_workspace"
-            save_global_state
-
+            save_state
 
             aerospace summon-workspace "$target"
 
@@ -248,22 +225,20 @@ case "$action" in
         # ----------------------------------------------------
         # SPECIAL -> DIFFERENT SPECIAL
         #
-        # Do NOT change special_return.
+        # Keep the SAME underlying workspace.
         #
         # Example:
         #
-        # 2 -> S -> D -> W
+        # 7 -> S -> D -> W
         #
-        # special_return stays 2.
+        # special_return remains 7.
         # ----------------------------------------------------
 
         if is_special "$current_workspace"; then
 
-            load_monitor_state "$current_monitor"
-
             last_special="$target"
 
-            save_monitor_state "$current_monitor"
+            save_state
 
             aerospace summon-workspace "$target"
 
@@ -275,12 +250,10 @@ case "$action" in
         # FALLBACK
         # ----------------------------------------------------
 
-        load_monitor_state "$current_monitor"
-
         special_return="$current_workspace"
         last_special="$target"
 
-        save_monitor_state "$current_monitor"
+        save_state
 
         aerospace summon-workspace "$target"
         ;;
@@ -289,22 +262,37 @@ case "$action" in
     # ========================================================
     # OPTION + TAB
     #
-    # Toggle this monitor's:
+    # Toggle:
     #
-    # last normal workspace <-> last special workspace
+    # last normal workspace <-> last lettered workspace
+    #
+    # Example:
+    #
+    # 7 -> S
+    #
+    # Option+Tab -> 7
+    # Option+Tab -> S
+    # Option+Tab -> 7
+    #
+    #
+    # Another example:
+    #
+    # 7 -> S -> D
+    #
+    # Option+Tab -> 7
+    # Option+Tab -> D
     # ========================================================
 
     toggle-special)
 
+
         # ----------------------------------------------------
         # CURRENTLY ON SPECIAL
         #
-        # Return to THIS monitor's saved return point.
+        # Return to workspace underneath it.
         # ----------------------------------------------------
 
         if is_special "$current_workspace"; then
-
-            load_monitor_state "$current_monitor"
 
             if [ -z "$special_return" ]; then
                 exit 0
@@ -319,11 +307,11 @@ case "$action" in
         # ----------------------------------------------------
         # CURRENTLY ON NORMAL WORKSPACE
         #
-        # This normal workspace becomes the new return point
-        # for THIS monitor.
+        # This becomes the new return point.
+        #
+        # Then summon the most recently used special onto
+        # THIS monitor.
         # ----------------------------------------------------
-
-        load_monitor_state "$current_monitor"
 
         if [ -z "$last_special" ]; then
             exit 0
@@ -332,14 +320,13 @@ case "$action" in
 
         special_return="$current_workspace"
 
-        save_monitor_state "$current_monitor"
-
 
         if is_numbered "$current_workspace"; then
             current_numbered="$current_workspace"
-            save_global_state
         fi
 
+
+        save_state
 
         aerospace summon-workspace "$last_special"
         ;;
@@ -351,7 +338,15 @@ case "$action" in
     # Toggle between the two most recently used NUMBERED
     # workspaces.
     #
-    # Special workspaces are ignored.
+    # Lettered workspaces are completely ignored.
+    #
+    # Example:
+    #
+    # 2 -> 4 -> S -> D
+    #
+    # Option+` -> 2
+    # Option+` -> 4
+    # Option+` -> 2
     # ========================================================
 
     previous-numbered)
@@ -363,12 +358,14 @@ case "$action" in
 
         destination="$previous_numbered"
 
+
+        # Swap numbered history
         temp="$current_numbered"
 
         current_numbered="$previous_numbered"
         previous_numbered="$temp"
 
-        save_global_state
+        save_state
 
         aerospace workspace "$destination"
         ;;

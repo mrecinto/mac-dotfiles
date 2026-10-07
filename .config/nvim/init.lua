@@ -41,7 +41,21 @@ vim.api.nvim_set_hl(0, "ColorColumn", { bg = "none" })
 vim.opt.number = true                              -- Line numbers
 vim.opt.relativenumber = true                      -- Relative line numbers
 vim.opt.cursorline = true                          -- Highlight current line
-vim.opt.wrap = false                               -- Don't wrap lines
+-- vim.opt.wrap = false                               -- Don't wrap lines
+-- Basic settings
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.cursorline = true
+
+-- Line wrapping
+vim.opt.wrap = true
+vim.opt.linebreak = true
+vim.opt.breakindent = true
+
+vim.opt.scrolloff = 10
+vim.opt.sidescrolloff = 8
+
+
 vim.opt.scrolloff = 10                             -- Keep 10 lines above/below cursor 
 vim.opt.sidescrolloff = 8                          -- Keep 8 columns left/right of cursor
 
@@ -90,7 +104,7 @@ vim.opt.swapfile = false                           -- Don't create swap files
 vim.opt.undofile = true                            -- Persistent undo
 vim.opt.undodir = vim.fn.expand("~/.vim/undodir")  -- Undo directory
 vim.opt.updatetime = 300                           -- Faster completion
-vim.opt.timeoutlen = 0                           -- Key timeout duration
+vim.opt.timeoutlen = 500                           -- Key timeout duration
 -- vim.opt.ttimeoutlen = 0                            -- Key code timeout
 vim.opt.autoread = true                            -- Auto reload files changed outside vim
 vim.opt.autowrite = false                          -- Don't auto save
@@ -126,6 +140,12 @@ vim.g.maplocalleader = " "                         -- Set local leader key (NEW)
 
 -- Normal mode mappings
 vim.keymap.set("n", "<leader>c", ":nohlsearch<CR>", { desc = "Clear search highlights" })
+
+-- Select everything
+vim.keymap.set("n", "<M-a>", "ggVG", { desc = "Select all" })
+
+-- Save file
+vim.keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" })
 
 -- Y to EOL
 vim.keymap.set("n", "Y", "y$", { desc = "Yank to end of line" })
