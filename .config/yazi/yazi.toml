@@ -8,8 +8,8 @@ xournalpp = [
   { run = '"$HOME/.config/yazi/scripts/fix-xopp" %s1 && open -a "Xournal++" %s1', orphan = true, desc = "Xournal++" }
 ]
 
-zathura = [
-  { run = "zathura %s", orphan = true, desc = "Zathura" }
+preview = [
+  { run = 'open -a "Preview" %s', orphan = true, desc = "macOS Preview" }
 ]
 
 
@@ -22,9 +22,9 @@ rules = [
   # Empty files
   { mime = "inode/x-empty", use = "nvim" },
 
-  # PDFs
-  { mime = "application/pdf", use = ["zathura", "xournalpp"] },
-  { url = "*.pdf", use = "zathura" },
+  # PDFs — macOS Preview
+  { mime = "application/pdf", use = ["preview", "xournalpp"] },
+  { url = "*.pdf", use = "preview" },
 
   # Text files
   { mime = "text/*", use = "nvim" },

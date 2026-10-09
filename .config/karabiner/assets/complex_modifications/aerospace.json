@@ -1,0 +1,25 @@
+{
+  "title": "AeroSpace Workspace Switching",
+  "rules": [
+    {
+      "description": "Command + Tab: last used workspace",
+      "manipulators": [
+        {
+          "type": "basic",
+          "from": {
+            "key_code": "tab",
+            "modifiers": {
+              "mandatory": ["command"],
+              "optional": ["any"]
+            }
+          },
+          "to": [
+            {
+              "shell_command": "/opt/homebrew/bin/aerospace workspace-back-and-forth"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
