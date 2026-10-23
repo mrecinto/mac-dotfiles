@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 STATE_DIR="/tmp/aerospace-workspace-state-$USER"
@@ -6,7 +7,6 @@ mkdir -p "$STATE_DIR"
 
 action="$1"
 target="$2"
-
 
 # ============================================================
 # HELPERS
@@ -20,8 +20,7 @@ get_current_monitor() {
     aerospace list-monitors \
         --focused \
         --format '%{monitor-id}' \
-        2>/dev/null |
-        head -n 1
+        2>/dev/null | head -n 1
 }
 
 is_numbered() {
@@ -46,16 +45,27 @@ is_special() {
     esac
 }
 
+# ============================================================
+# WORKSPACE SWITCHING
+#
+# Summon the target workspace onto the focused monitor.
+# Applies to numbered, special, and history navigation.
+# ============================================================
+
+switch_workspace() {
+    local destination="$1"
+
+    [ -n "$destination" ] || return 1
+
+    if [ "$(get_current_workspace)" = "$destination" ]; then
+        return 0
+    fi
+
+    aerospace summon-workspace "$destination"
+}
 
 # ============================================================
 # PER-MONITOR STATE
-#
-# Every monitor remembers independently:
-#
-# current_numbered
-# previous_numbered
-# last_special
-# special_return
 # ============================================================
 
 monitor_state_file() {
@@ -90,7 +100,6 @@ save_monitor_state() {
     } > "$file"
 }
 
-
 # ============================================================
 # INITIAL STATE
 # ============================================================
@@ -98,15 +107,12 @@ save_monitor_state() {
 current_workspace="$(get_current_workspace)"
 current_monitor="$(get_current_monitor)"
 
-load_monitor_state "$current_monitor"
+[ -n "$current_monitor" ] || exit 1
 
+load_monitor_state "$current_monitor"
 
 # ============================================================
 # SELF-HEAL NUMBERED STATE
-#
-# If AeroSpace navigation landed us on a numbered workspace
-# without going through this script, sync this monitor's
-# numbered history.
 # ============================================================
 
 if is_numbered "$current_workspace" &&
@@ -121,19 +127,19 @@ if is_numbered "$current_workspace" &&
     save_monitor_state "$current_monitor"
 fi
 
-
 # ============================================================
 # ACTIONS
 # ============================================================
 
 case "$action" in
 
-
     # ========================================================
     # NUMBERED WORKSPACE
     # ========================================================
 
     numbered)
+
+        is_numbered "$target" || exit 1
 
         if [ "$target" = "$current_workspace" ]; then
             exit 0
@@ -148,46 +154,31 @@ case "$action" in
             current_numbered="$target"
         fi
 
+        switch_workspace "$target" || exit 1
+
         save_monitor_state "$current_monitor"
-
-        aerospace workspace "$target"
         ;;
-
 
     # ========================================================
     # SPECIAL WORKSPACE
-    #
-    # Always summon the special onto the CURRENT monitor.
     # ========================================================
 
     special)
 
+        is_special "$target" || exit 1
 
-        # ----------------------------------------------------
-        # SAME SPECIAL AGAIN
-        #
-        # 2 -> A
-        # Option+A -> 2
-        # ----------------------------------------------------
-
+        # Same special again -> return
         if [ "$current_workspace" = "$target" ]; then
 
             if [ -z "$special_return" ]; then
                 exit 0
             fi
 
-            aerospace workspace "$special_return"
-
-            exit 0
+            switch_workspace "$special_return"
+            exit $?
         fi
 
-
-        # ----------------------------------------------------
-        # NORMAL/NUMBERED -> SPECIAL
-        #
-        # Establish this monitor's new return point.
-        # ----------------------------------------------------
-
+        # Numbered -> special
         if ! is_special "$current_workspace"; then
 
             special_return="$current_workspace"
@@ -197,63 +188,39 @@ case "$action" in
                 current_numbered="$current_workspace"
             fi
 
+            switch_workspace "$target" || exit 1
+
             save_monitor_state "$current_monitor"
-
-            aerospace summon-workspace "$target"
-
             exit 0
         fi
 
-
-        # ----------------------------------------------------
-        # SPECIAL -> DIFFERENT SPECIAL
-        #
-        # Keep the SAME return point.
-        #
-        # 2 -> A -> S -> D
-        #
-        # return remains 2.
-        # ----------------------------------------------------
-
+        # Special -> different special
+        # Preserve original return workspace
         last_special="$target"
 
+        switch_workspace "$target" || exit 1
+
         save_monitor_state "$current_monitor"
-
-        aerospace summon-workspace "$target"
         ;;
-
 
     # ========================================================
     # OPTION + TAB
-    #
-    # Toggle this monitor's:
-    #
-    # return workspace <-> last special
     # ========================================================
 
     toggle-special)
 
-
-        # ----------------------------------------------------
-        # SPECIAL -> RETURN
-        # ----------------------------------------------------
-
+        # Special -> return workspace
         if is_special "$current_workspace"; then
 
             if [ -z "$special_return" ]; then
                 exit 0
             fi
 
-            aerospace workspace "$special_return"
-
-            exit 0
+            switch_workspace "$special_return"
+            exit $?
         fi
 
-
-        # ----------------------------------------------------
-        # NORMAL -> LAST SPECIAL
-        # ----------------------------------------------------
-
+        # Numbered -> last special
         if [ -z "$last_special" ]; then
             exit 0
         fi
@@ -264,16 +231,13 @@ case "$action" in
             current_numbered="$current_workspace"
         fi
 
-        save_monitor_state "$current_monitor"
+        switch_workspace "$last_special" || exit 1
 
-        aerospace summon-workspace "$last_special"
+        save_monitor_state "$current_monitor"
         ;;
 
-
     # ========================================================
-    # OPTION + `
-    #
-    # Per-monitor numbered history.
+    # OPTION + BACKTICK
     # ========================================================
 
     previous-numbered)
@@ -286,12 +250,17 @@ case "$action" in
 
         temp="$current_numbered"
 
-        current_numbered="$previous_numbered"
+        switch_workspace "$destination" || exit 1
+
+        current_numbered="$destination"
         previous_numbered="$temp"
 
         save_monitor_state "$current_monitor"
+        ;;
 
-        aerospace workspace "$destination"
+    *)
+        echo "Unknown action: $action" >&2
+        exit 1
         ;;
 
 esac

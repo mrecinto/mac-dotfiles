@@ -1,16 +1,14 @@
+
 config-version = 2
 
 start-at-login = true
-
 
 # ============================================================
 # CALLBACKS
 # ============================================================
 
-# No automatic mouse movement.
-# H/J/K/L explicitly move the mouse when YOU navigate.
+# No automatic mouse movement on workspace changes.
 on-focused-monitor-changed = []
-
 
 # ============================================================
 # MAIN KEYBINDINGS
@@ -18,30 +16,26 @@ on-focused-monitor-changed = []
 
 [mode.main.binding]
 
-
 # ============================================================
 # CORE
 # ============================================================
 
 alt-q = '''exec-and-forget osascript -e 'tell application "Ghostty" to new window' '''
-
 alt-shift-q = 'close'
 
 alt-v = 'layout floating tiling'
 
 alt-c = 'exec-and-forget open -na "Zen"'
 
-
 # ============================================================
 # WORKSPACE HISTORY
 # ============================================================
 
-# Last lettered workspace <-> previous workspace
+# Last special workspace <-> previous workspace
 alt-tab = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh toggle-special'
 
 # Previous numbered workspace
 alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh previous-numbered'
-
 
 # ============================================================
 # MOVE CURRENT WORKSPACE TO NEXT MONITOR
@@ -49,16 +43,8 @@ alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh previou
 
 alt-shift-m = 'move-workspace-to-monitor next --wrap-around'
 
-
 # ============================================================
 # FOCUS WINDOWS
-#
-# Option + H/J/K/L
-#
-# Native AeroSpace directional navigation.
-# Can move between windows and across displays.
-#
-# Mouse only follows because YOU pressed H/J/K/L.
 # ============================================================
 
 alt-h = [
@@ -81,7 +67,6 @@ alt-l = [
     'move-mouse window-lazy-center',
 ]
 
-
 # ============================================================
 # MOVE WINDOWS
 # ============================================================
@@ -91,7 +76,6 @@ alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
-
 # ============================================================
 # MOVE WINDOW BETWEEN MONITORS
 # ============================================================
@@ -99,14 +83,12 @@ alt-shift-l = 'move right'
 alt-cmd-shift-h = 'move-node-to-monitor left'
 alt-cmd-shift-l = 'move-node-to-monitor right'
 
-
 # ============================================================
 # MOVE WORKSPACE BETWEEN MONITORS
 # ============================================================
 
 alt-cmd-h = 'move-workspace-to-monitor left'
 alt-cmd-l = 'move-workspace-to-monitor right'
-
 
 # ============================================================
 # SPECIAL WORKSPACES
@@ -119,7 +101,6 @@ alt-d = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special D'
 alt-i = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special I'
 alt-o = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh special O'
 
-
 # ============================================================
 # MOVE WINDOW TO SPECIAL WORKSPACE
 # ============================================================
@@ -130,7 +111,6 @@ alt-shift-s = 'move-node-to-workspace S'
 alt-shift-d = 'move-node-to-workspace D'
 alt-shift-i = 'move-node-to-workspace I'
 alt-shift-o = 'move-node-to-workspace O'
-
 
 # ============================================================
 # NUMBERED WORKSPACES
@@ -146,7 +126,6 @@ alt-7 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 7'
 alt-8 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 8'
 alt-9 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 9'
 alt-0 = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh numbered 10'
-
 
 # ============================================================
 # MOVE WINDOW TO NUMBERED WORKSPACE
