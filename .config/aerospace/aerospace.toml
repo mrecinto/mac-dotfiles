@@ -3,12 +3,21 @@ config-version = 2
 
 start-at-login = true
 
-# Reserve space for the 40px SketchyBar at the top of each display.
-gaps.outer.top = 40
+# Match Hyprland: gaps_in=6, gaps_out=10.
+gaps.inner.horizontal = 6
+gaps.inner.vertical = 6
+gaps.outer.left = 10
+gaps.outer.right = 10
+gaps.outer.bottom = 10
+# Reserve the 36px SketchyBar plus the same 10px outer gap.
+gaps.outer.top = 46
 
 # ============================================================
 # CALLBACKS
 # ============================================================
+
+# Push workspace changes to the bar immediately.
+exec-on-workspace-change = ['/bin/bash', '-c', 'sketchybar --trigger aerospace_workspace_change']
 
 # No automatic mouse movement on workspace changes.
 on-focused-monitor-changed = []
@@ -144,3 +153,16 @@ alt-shift-7 = 'move-node-to-workspace 7'
 alt-shift-8 = 'move-node-to-workspace 8'
 alt-shift-9 = 'move-node-to-workspace 9'
 alt-shift-0 = 'move-node-to-workspace 10'
+
+# Move every window in the current workspace and follow the group.
+# Existing destination windows stay there; AeroSpace may rearrange the layout.
+ctrl-alt-shift-1 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 1'
+ctrl-alt-shift-2 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 2'
+ctrl-alt-shift-3 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 3'
+ctrl-alt-shift-4 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 4'
+ctrl-alt-shift-5 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 5'
+ctrl-alt-shift-6 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 6'
+ctrl-alt-shift-7 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 7'
+ctrl-alt-shift-8 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 8'
+ctrl-alt-shift-9 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 9'
+ctrl-alt-shift-0 = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/move-workspace-windows.sh 10'

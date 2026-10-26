@@ -210,6 +210,18 @@ No menu bar hiding, prebuilt theme, or space integration is configured. Its upst
 review that manually before enabling it. No extra permissions are required by the
 single-label starter; future plugins may request access according to their commands.
 
+SketchyBar follows the main display's wallpaper automatically. Its hidden
+`wallpaper_theme` item checks every second and on wake, runs Matugen only when
+the image path or modification time changes, and reloads the bar with the new
+palette. Change wallpapers in System Settings as usual. Matugen is managed in
+`modules/home/packages.nix`; the palette template and fallback colors live in
+`.config/sketchybar/theme/`. Generated colors and the compiled AppKit wallpaper
+helper live in `~/Library/Caches/sketchybar-theme` (or `$XDG_CACHE_HOME`). If the
+wallpaper isn't a readable image, the last working palette stays active. The
+palette follows the main display; changing displays/Spaces with distinct images
+may change it. Animated wallpaper frames aren't sampled. To force regeneration,
+delete the cache's `signature` file and wait for the next check.
+
 ## Packages and structural changes
 
 - Add Brew apps/formulae/taps in `modules/darwin/homebrew.nix`. Existing tools remain
@@ -283,3 +295,47 @@ Before migrating to another Mac, commit your intended configuration and flake.lo
 locally, then push when you choose. Clone that revision, edit host settings, build,
 inspect collisions, switch, and finish manual restoration. No automatic commit,
 push, service enablement, default-shell change or destructive cleanup is included.
+
+SketchyBar's Waybar-style layout uses ten AeroSpace workspace buttons (including
+empty workspaces), a centered focused window title, and a wallpaper-colored
+vertical gradient matching the original CSS opacity stops. Workspace highlighting updates immediately through AeroSpace callbacks;
+occupancy/app metadata refreshes every five seconds and window titles every second. ImageMagick renders the gradient into
+the theme cache on reload. The power icon opens System Settings; it does not
+shut down the Mac. Linux tray and urgent-window signals have no direct mapping
+in this setup.
+
+The `✦` button after workspace 10 opens a menu for W, A, S, D, I, and O,
+with each workspace's app names and a checkmark on the focused workspace.
+It displays the letter while a special workspace is focused. Selecting a row
+uses the same summon/return behavior as the Option-letter keyboard shortcuts;
+selecting the current special workspace returns to its numbered origin.
+
+Option-Control-Shift-1 through 9 moves all windows from the current workspace
+to that numbered workspace and follows them; 0 targets workspace 10. This also
+works from a special workspace. Existing destination windows remain there.
+The previously focused window regains focus, but AeroSpace may rearrange splits,
+window order, and sizes because it moves windows individually.
+
+Wallpaper theming normalizes the image to a small cached PNG before invoking
+Matugen, so wallpapers with mismatched extensions (such as JPEGs named `.png`)
+work without modifying the original file.
+
+Wallpaper palettes are cached by image contents, template, and Matugen version
+in the theme cache's `palettes/` directory. Switching back reuses the saved palette;
+only unseen/changed images or generation settings run Matugen again. Detection
+takes up to one second. Gradient images are cached too, avoiding regeneration
+on a cached wallpaper switch.
+
+Wallpaper colors also generate `ghostty.conf` and `zen.css` in the theme cache.
+Ghostty includes the generated background/foreground/cursor/selection colors over
+its Catppuccin ANSI palette; reload via Command-Shift-comma if scripting reload
+is unavailable. The watcher requests Ghostty's `reload_config` action automatically.
+Run `python3 scripts/install-zen-wallpaper.py` after setting up a new Mac to link
+the generated CSS into the installed Zen profile. Existing userChrome and user.js
+files are preserved and backed up before edits. Restart Zen to load changed CSS;
+this themes browser UI, not page contents.
+
+Ghostty follows macOS light/dark appearance using two generated theme files.
+The dark variant uses the bar palette; the light variant is generated from the
+wallpaper accent and cached by accent/template/version. Zen and SketchyBar keep
+their existing dark palettes.

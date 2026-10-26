@@ -1,96 +1,87 @@
-# This is a demo config to showcase some of the most important commands.
-# It is meant to be changed and configured, as it is intentionally kept sparse.
-# For a (much) more advanced configuration example see my dotfiles:
-# https://github.com/FelixKratz/dotfiles
-
+#!/bin/bash
 PLUGIN_DIR="$CONFIG_DIR/plugins"
+. "$CONFIG_DIR/theme/colors.sh"
+. "$CONFIG_DIR/theme/popup.sh"
 
-##### Bar Appearance #####
-# Configuring the general appearance of the bar.
-# These are only some of the options available. For all options see:
-# https://felixkratz.github.io/SketchyBar/config/bar
-# If you are looking for other colors, see the color picker:
-# https://felixkratz.github.io/SketchyBar/config/tricks#color-picker
+# The Waybar CSS uses a top-to-bottom fade rather than a solid fill.
+sketchybar --bar position=top height=36 color=0x00000000 blur_radius=0 \
+  border_width=0 corner_radius=0 padding_left=0 padding_right=16 topmost=window
+sh "$CONFIG_DIR/helpers/gradient.sh"
+sketchybar --add item backdrop left --set backdrop width=0 padding_left=0 padding_right=0 \
+  icon.drawing=off label.drawing=off background.drawing=on \
+  background.image="$THEME_CACHE/gradient.png" background.image.scale=0.5 background.x_offset=0
 
-sketchybar --bar position=top height=40 blur_radius=30 color=0x40000000 topmost=window
+sketchybar --default padding_left=10 padding_right=10 \
+  icon.font="JetBrainsMono Nerd Font:Regular:16.0" \
+  label.font="JetBrainsMono Nerd Font:Regular:16.0" \
+  icon.color="$ON_BACKGROUND" label.color="$ON_BACKGROUND" \
+  icon.padding_left=0 icon.padding_right=5 label.padding_left=0 label.padding_right=0
 
-##### Changing Defaults #####
-# We now change some default values, which are applied to all further items.
-# For a full list of all available item properties see:
-# https://felixkratz.github.io/SketchyBar/config/items
-
-default=(
-  padding_left=5
-  padding_right=5
-  icon.font="Hack Nerd Font:Bold:17.0"
-  label.font="Hack Nerd Font:Bold:14.0"
-  icon.color=0xffffffff
-  label.color=0xffffffff
-  icon.padding_left=4
-  icon.padding_right=4
-  label.padding_left=4
-  label.padding_right=4
-)
-sketchybar --default "${default[@]}"
-
-##### Adding Mission Control Space Indicators #####
-# Let's add some mission control spaces:
-# https://felixkratz.github.io/SketchyBar/config/components#space----associate-mission-control-spaces-with-an-item
-# to indicate active and available mission control spaces.
-
-SPACE_ICONS=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10")
-for i in "${!SPACE_ICONS[@]}"
-do
-  sid="$(($i+1))"
-  space=(
-    space="$sid"
-    icon="${SPACE_ICONS[i]}"
-    icon.padding_left=7
-    icon.padding_right=7
-    background.color=0x40ffffff
-    background.corner_radius=5
-    background.height=25
-    label.drawing=off
-    script="$PLUGIN_DIR/space.sh"
-    click_script="yabai -m space --focus $sid"
-  )
-  sketchybar --add space space."$sid" left --set space."$sid" "${space[@]}"
+# Regular items follow AeroSpace's virtual workspaces, not Mission Control Spaces.
+for sid in {1..10}; do
+  sketchybar --add item "space.$sid" left --set "space.$sid" \
+    icon="$sid" icon.padding_left=10 icon.padding_right=10 \
+    padding_left=3 padding_right=3 label.drawing=off \
+    background.drawing=on background.color=0x00000000 \
+    background.height=28 background.corner_radius=4 \
+    background.border_width=1 background.border_color=0x00000000 \
+    click_script="aerospace workspace $sid" \
+    script="/bin/sh \"$PLUGIN_DIR/space.sh\"" \
+    --subscribe "space.$sid" mouse.entered mouse.exited
 done
+# Keep content inset without leaving a gap in the full-width gradient.
+sketchybar --set space.1 padding_left=15
 
-##### Adding Left Items #####
-# We add some regular items to the left side of the bar, where
-# only the properties deviating from the current defaults need to be set
+# One entry point for the six special workspaces.
+sketchybar --add item special left --set special icon="✦" label.drawing=off \
+  icon.padding_left=10 icon.padding_right=10 padding_left=3 padding_right=3 \
+  background.drawing=on background.height=28 background.corner_radius=4 \
+  background.border_width=1 background.border_color="$SURFACE_VARIANT" \
+  popup.align=left popup.height=34 popup.background.color="$POPUP_BACKGROUND" \
+  popup.background.border_color="$POPUP_BORDER" popup.background.border_width=1 \
+  popup.background.corner_radius=8 \
+  click_script="/bin/sh \"$PLUGIN_DIR/special.sh\" toggle"
+for sid in W A S D I O; do
+  sketchybar --add item "special.$sid" popup.special --set "special.$sid" \
+    icon="$sid" icon.width=28 icon.align=center label="Empty" label.max_chars=42 \
+    padding_left=8 padding_right=12 background.height=28 background.corner_radius=4 \
+    click_script="/bin/sh \"$PLUGIN_DIR/special.sh\" $sid" \
+    script="/bin/sh \"$PLUGIN_DIR/special.sh\" hover" \
+    --subscribe "special.$sid" mouse.entered mouse.exited
+ done
 
-sketchybar --add item chevron left \
-           --set chevron icon= label.drawing=off \
-           --add item front_app left \
-           --set front_app icon.drawing=off script="$PLUGIN_DIR/front_app.sh" \
-           --subscribe front_app front_app_switched
+sketchybar --add item front_app center --set front_app icon.drawing=off \
+  label.max_chars=55 update_freq=1 script="/bin/sh \"$PLUGIN_DIR/front_app.sh\"" \
+  --subscribe front_app front_app_switched
 
-##### Adding Right Items #####
-# In the same way as the left items we can add items to the right side.
-# Additional position (e.g. center) are available, see:
-# https://felixkratz.github.io/SketchyBar/config/items#adding-items-to-sketchybar
+# Right items are added from the outside inward.
+sketchybar --add item power right --set power icon= label.drawing=off \
+  icon.padding_right=0 click_script="open -a 'System Settings'" \
+  --add item clock right --set clock icon.drawing=off update_freq=10 \
+    script="$PLUGIN_DIR/clock.sh" \
+  --add item volume right --set volume script="$PLUGIN_DIR/volume.sh" \
+  --subscribe volume volume_change \
+  --add item network right --set network icon=󰖩 label.drawing=off update_freq=15 \
+    script="/bin/sh \"$PLUGIN_DIR/network.sh\"" \
+  --subscribe network system_woke wifi_change \
+  --add item battery right --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
+  --subscribe battery system_woke power_source_change
 
-# Some items refresh on a fixed cycle, e.g. the clock runs its script once
-# every 10s. Other items respond to events they subscribe to, e.g. the
-# volume.sh script is only executed once an actual change in system audio
-# volume is registered. More info about the event system can be found here:
-# https://felixkratz.github.io/SketchyBar/config/events
-
-sketchybar --add item clock right \
-           --set clock update_freq=10 icon=  script="$PLUGIN_DIR/clock.sh" \
-           --add item volume right \
-           --set volume script="$PLUGIN_DIR/volume.sh" \
-           --subscribe volume volume_change \
-           --add item battery right \
-           --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
-           --subscribe battery system_woke power_source_change
-
-##### Force all scripts to run the first time (never do this in a script) #####
+sketchybar --add event aerospace_workspace_change
+sketchybar --subscribe front_app aerospace_workspace_change
+sketchybar --add item workspace_state left --set workspace_state drawing=off \
+  updates=on update_freq=5 script="/bin/bash \"$PLUGIN_DIR/workspaces.sh\"" \
+  --subscribe workspace_state aerospace_workspace_change
+sketchybar --add item wallpaper_theme left --set wallpaper_theme drawing=off \
+  updates=on update_freq=1 script="/bin/sh \"$PLUGIN_DIR/wallpaper.sh\"" \
+  --subscribe wallpaper_theme system_woke
+# Check appearance while the menu is open as well as between openings.
+rm -f "$THEME_CACHE/popup-mode"
+sketchybar --add item popup_theme left --set popup_theme drawing=off \
+  updates=on update_freq=1 script="/bin/sh \"$PLUGIN_DIR/special.sh\" theme"
 sketchybar --update
 
-# Hide this bar while the native macOS menu bar is revealed at the top edge.
+# Preserve the existing native menu bar reveal behavior.
 pkill -x sketchybar-toggle || true
 pkill -x sb-menu-bridge || true
 sh "$CONFIG_DIR/helpers/menu-bridge.sh" &

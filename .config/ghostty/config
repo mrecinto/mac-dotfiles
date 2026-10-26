@@ -7,7 +7,9 @@ font-size = 14
 window-padding-x = 10
 window-padding-y = 10
 
+# Keep the ANSI syntax colors; wallpaper palette controls the surface and accents.
 theme = light:Catppuccin Latte,dark:Catppuccin Mocha
+config-file = ?~/Library/Caches/sketchybar-theme/ghostty.conf
 
 
 # ============================================================

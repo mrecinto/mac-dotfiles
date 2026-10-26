@@ -40,6 +40,7 @@
       "zoxide"
     ];
     casks = [
+      "font-jetbrains-mono-nerd-font"
       "android-platform-tools"
       "ghostty"
       "karabiner-elements"

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. "$CONFIG_DIR/theme/colors.sh"
+
 PERCENTAGE="$(pmset -g batt | grep -Eo "\d+%" | cut -d% -f1)"
 CHARGING="$(pmset -g batt | grep 'AC Power')"
 
@@ -19,10 +21,14 @@ case "${PERCENTAGE}" in
   *) ICON=""
 esac
 
-if [[ "$CHARGING" != "" ]]; then
+COLOR="$ON_BACKGROUND"
+if [ "$CHARGING" != "" ]; then
+  COLOR="$PRIMARY"
   ICON=""
+elif [ "$PERCENTAGE" -le 20 ]; then
+  COLOR="$ERROR"
 fi
 
 # The item invoking this script (name $NAME) will get its icon and label
 # updated with the current battery status
-sketchybar --set "$NAME" icon="$ICON" label="${PERCENTAGE}%"
+sketchybar --set "$NAME" icon="$ICON" label="${PERCENTAGE}%" icon.color="$COLOR" label.color="$COLOR"

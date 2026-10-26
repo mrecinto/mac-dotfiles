@@ -1,0 +1,6 @@
+background = {{colors.background.light.hex}}
+foreground = {{colors.on_background.light.hex}}
+cursor-color = {{colors.primary.light.hex}}
+cursor-text = {{colors.on_primary.light.hex}}
+selection-background = {{colors.primary.light.hex}}
+selection-foreground = {{colors.on_primary.light.hex}}

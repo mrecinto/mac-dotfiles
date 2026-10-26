@@ -1,0 +1,7 @@
+BACKGROUND=0xd9{{colors.background.dark.hex_stripped}}
+ON_BACKGROUND=0xff{{colors.on_background.dark.hex_stripped}}
+PRIMARY=0xff{{colors.primary.dark.hex_stripped}}
+ON_PRIMARY=0xff{{colors.on_primary.dark.hex_stripped}}
+SURFACE_VARIANT=0xff{{colors.surface_variant.dark.hex_stripped}}
+SURFACE_TINT=0xff{{colors.surface_tint.dark.hex_stripped}}
+ERROR=0xff{{colors.error.dark.hex_stripped}}
