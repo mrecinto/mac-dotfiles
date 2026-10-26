@@ -4,6 +4,7 @@
 
 set -gx EDITOR nvim
 set -gx VISUAL nvim
+set -gx PICO_HOME /Users/matthew/Library/PICO/sdk
 
 
 if status is-interactive
@@ -179,3 +180,4 @@ if status is-interactive
     end
 
 end
+export PATH="$HOME/.local/bin:$PATH"
