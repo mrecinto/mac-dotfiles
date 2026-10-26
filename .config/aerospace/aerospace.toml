@@ -3,6 +3,9 @@ config-version = 2
 
 start-at-login = true
 
+# Reserve space for the 40px SketchyBar at the top of each display.
+gaps.outer.top = 40
+
 # ============================================================
 # CALLBACKS
 # ============================================================
