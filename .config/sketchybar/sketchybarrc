@@ -1,0 +1,7 @@
+#!/bin/sh
+# Starter only. No native menu bar preference changes; no automatic service.
+# Leave room below the native menu bar. Customize freely, then sketchybar --reload.
+sketchybar --bar height=24 position=top y_offset=32 color=0xcc202020 \
+  --default label.font="Helvetica Neue:Regular:12" \
+  --add item welcome left \
+  --set welcome label="SketchyBar" label.color=0xffffffff

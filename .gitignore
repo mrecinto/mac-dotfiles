@@ -1,0 +1,15 @@
+.DS_Store
+result
+result-*
+.direnv/
+*.swp
+*.swo
+# Fish writes machine-local universal state; never snapshot this into Nix/Git.
+.config/fish/fish_variables
+# Keep backups and secrets outside the flake source.
+backups/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc

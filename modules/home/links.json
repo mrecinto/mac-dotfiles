@@ -1,0 +1,17 @@
+{
+  "shared": [
+    "fish",
+    "nvim",
+    "tmux",
+    "starship.toml"
+  ],
+  "darwin": [
+    "aerospace",
+    "ghostty",
+    "yazi",
+    "xournalpp",
+    "zathura",
+    "sketchybar",
+    "karabiner/assets/complex_modifications/aerospace.json"
+  ]
+}
