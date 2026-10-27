@@ -7,9 +7,8 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 sketchybar --bar position=top height=36 color=0x00000000 blur_radius=0 \
   border_width=0 corner_radius=0 padding_left=0 padding_right=16 topmost=window
 sh "$CONFIG_DIR/helpers/gradient.sh"
-sketchybar --add item backdrop left --set backdrop width=0 padding_left=0 padding_right=0 \
-  icon.drawing=off label.drawing=off background.drawing=on \
-  background.image="$THEME_CACHE/gradient.png" background.image.scale=0.5 background.x_offset=0
+# Draw inside each bar window, so the image cannot spill onto another monitor.
+sketchybar --bar image="$THEME_CACHE/gradient.png" image.scale=0.5
 
 sketchybar --default padding_left=10 padding_right=10 \
   icon.font="JetBrainsMono Nerd Font:Regular:16.0" \

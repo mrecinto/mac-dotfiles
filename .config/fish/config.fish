@@ -15,6 +15,17 @@ if status is-interactive
     # STARSHIP
     # ========================================================
 
+    # Pick the matching prompt palette before Starship renders each prompt.
+    set -g __dotfiles_prompt_dir (path dirname (status filename))
+    function __dotfiles_prompt_appearance --on-event fish_prompt
+        set -l appearance (command defaults read -g AppleInterfaceStyle 2>/dev/null)
+        if test "$appearance" = Dark
+            set -gx STARSHIP_CONFIG "$__dotfiles_prompt_dir/starship-dark.toml"
+        else
+            set -gx STARSHIP_CONFIG "$__dotfiles_prompt_dir/../starship.toml"
+        end
+    end
+    __dotfiles_prompt_appearance
     starship init fish | source
 
 

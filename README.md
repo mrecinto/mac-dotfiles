@@ -310,6 +310,17 @@ It displays the letter while a special workspace is focused. Selecting a row
 uses the same summon/return behavior as the Option-letter keyboard shortcuts;
 selecting the current special workspace returns to its numbered origin.
 
+Workspace shortcuts keep per-monitor history through `workspace.sh`, which
+executes the standard-library Python helper `workspace.py`. It uses one connection
+to AeroSpace's documented local socket API for live focus/monitor lookup and the
+switch, avoiding repeated CLI launches. A kernel lock serializes history updates;
+the existing four-line history files remain compatible. No extra daemon is needed.
+Measured command timings are in [the before/after report](docs/benchmarks/workspace-latency-optimized.md).
+
+Option-[ and Option-] cycle backward/forward through occupied numbered
+workspaces on the focused monitor, skipping empty workspaces and wrapping.
+Special workspaces remain accessible through their Option-letter shortcuts.
+
 Option-Control-Shift-1 through 9 moves all windows from the current workspace
 to that numbered workspace and follows them; 0 targets workspace 10. This also
 works from a special workspace. Existing destination windows remain there.
@@ -339,3 +350,8 @@ Ghostty follows macOS light/dark appearance using two generated theme files.
 The dark variant uses the bar palette; the light variant is generated from the
 wallpaper accent and cached by accent/template/version. Zen and SketchyBar keep
 their existing dark palettes.
+
+SketchyBar draws its gradient inside each monitor's bar bounds, preventing
+background strips from spilling onto adjacent displays with different positions.
+Revealing the native macOS menu bar hides SketchyBar only on that monitor; other
+monitors keep their bars. Visibility resets when monitors change or the Mac wakes.

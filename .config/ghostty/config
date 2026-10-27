@@ -2,14 +2,22 @@
 # APPEARANCE
 # ============================================================
 
+font-family = JetBrainsMono Nerd Font
 font-size = 14
 
 window-padding-x = 10
 window-padding-y = 10
 
+# Hide the native title bar and traffic-light window buttons.
+macos-titlebar-style = hidden
+
 # Keep the ANSI syntax colors; wallpaper palette controls the surface and accents.
 theme = light:Catppuccin Latte,dark:Catppuccin Mocha
 config-file = ?~/Library/Caches/sketchybar-theme/ghostty.conf
+
+# Subtle wallpaper visibility with softened details behind the terminal.
+background-opacity = 0.90
+background-blur = 20
 
 
 # ============================================================

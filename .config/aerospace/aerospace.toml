@@ -37,7 +37,7 @@ alt-shift-q = 'close'
 
 alt-v = 'layout floating tiling'
 
-alt-c = 'exec-and-forget open -na "Zen"'
+alt-c = 'exec-and-forget python3 ~/.config/aerospace/scripts/zen-window.py'
 
 # ============================================================
 # WORKSPACE HISTORY
@@ -48,6 +48,11 @@ alt-tab = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh toggle-speci
 
 # Previous numbered workspace
 alt-backtick = 'exec-and-forget ~/.config/aerospace/scripts/workspace.sh previous-numbered'
+
+# Cycle occupied numbered workspaces on this monitor, wrapping at either end.
+alt-leftSquareBracket = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/workspace.sh occupied prev'
+alt-rightSquareBracket = 'exec-and-forget /bin/bash ~/.config/aerospace/scripts/workspace.sh occupied next'
+
 
 # ============================================================
 # MOVE CURRENT WORKSPACE TO NEXT MONITOR
