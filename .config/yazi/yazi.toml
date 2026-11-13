@@ -12,10 +12,17 @@ preview = [
   { run = 'open -a "Preview" %s', orphan = true, desc = "macOS Preview" }
 ]
 
+macos_default = [
+  { run = 'open %s', orphan = true, desc = "macOS default app" }
+]
+
 
 [open]
 
 rules = [
+  # MP4 videos — macOS default app
+  { url = "*.mp4", use = "macos_default" },
+
   # Xournal++ — MUST be before inode/x-empty
   { url = "*.xopp", use = "xournalpp" },
 
