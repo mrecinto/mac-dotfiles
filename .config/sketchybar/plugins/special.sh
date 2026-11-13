@@ -1,16 +1,20 @@
 #!/bin/sh
 set -eu
 . "$CONFIG_DIR/theme/colors.sh"
+if [ "${1:-}" != theme ]; then SKETCHYBAR_POPUP_CACHED=1; fi
 . "$CONFIG_DIR/theme/popup.sh"
 case "${1:-}" in
   theme)
     mkdir -p "$THEME_CACHE"
-    previous=$(cat "$THEME_CACHE/popup-mode" 2>/dev/null || true)
+    previous=""
+    if [ -r "$THEME_CACHE/popup-mode" ]; then
+      IFS= read -r previous < "$THEME_CACHE/popup-mode" || :
+    fi
     [ "$previous" != "$POPUP_MODE" ] || exit 0
     sketchybar --set special popup.background.color="$POPUP_BACKGROUND" \
       popup.background.border_color="$POPUP_BORDER"
-    /bin/bash "$CONFIG_DIR/plugins/workspaces.sh"
     printf '%s\n' "$POPUP_MODE" > "$THEME_CACHE/popup-mode"
+    /bin/bash "$CONFIG_DIR/plugins/workspaces.sh"
     ;;
   toggle)
     /bin/bash "$CONFIG_DIR/plugins/workspaces.sh"

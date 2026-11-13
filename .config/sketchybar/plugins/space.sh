@@ -5,4 +5,4 @@ case "$SENDER" in
   mouse.entered) printf '%s\n' "$NAME" > "$THEME_CACHE/hover" ;;
   mouse.exited) printf '' > "$THEME_CACHE/hover" ;;
 esac
-/bin/bash "$CONFIG_DIR/plugins/workspaces.sh"
+exec /bin/bash "$CONFIG_DIR/plugins/workspaces.sh"

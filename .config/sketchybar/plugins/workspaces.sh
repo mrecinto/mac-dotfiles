@@ -1,12 +1,17 @@
 #!/bin/bash
 set -eu
 . "$CONFIG_DIR/theme/colors.sh"
-. "$CONFIG_DIR/theme/popup.sh"
+SKETCHYBAR_POPUP_CACHED=1 . "$CONFIG_DIR/theme/popup.sh"
 mkdir -p "$THEME_CACHE"
 # Refresh app metadata on the fallback timer or when opening the menu.
-# Workspace events reuse it so highlighting never waits for app enumeration.
+# Pointer, reveal, and workspace events reuse it so highlighting never waits
+# for app enumeration or jq.
 cache="$THEME_CACHE/workspaces.tsv"
-if [ "${SENDER:-}" != aerospace_workspace_change ] || [ ! -r "$cache" ]; then
+refresh_metadata=true
+case "${SENDER:-}" in
+  aerospace_workspace_change|bar_revealed|mouse.entered|mouse.exited) refresh_metadata=false ;;
+esac
+if $refresh_metadata || [ ! -r "$cache" ]; then
   windows=$(aerospace list-windows --all --json --format '%{workspace}%{app-name}') || exit 0
   printf '%s' "$windows" | jq -r 'group_by(.workspace)[] | [.[0].workspace, (map(.["app-name"]) | unique | join(", "))] | @tsv' > "$cache.$$"
   mv "$cache.$$" "$cache"

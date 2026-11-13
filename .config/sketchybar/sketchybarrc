@@ -67,11 +67,11 @@ sketchybar --add item power right --set power icon= label.drawing=off \
   --add item battery right --set battery update_freq=120 script="$PLUGIN_DIR/battery.sh" \
   --subscribe battery system_woke power_source_change
 
-sketchybar --add event aerospace_workspace_change
+sketchybar --add event aerospace_workspace_change --add event bar_revealed
 sketchybar --subscribe front_app aerospace_workspace_change
 sketchybar --add item workspace_state left --set workspace_state drawing=off \
   updates=on update_freq=5 script="/bin/bash \"$PLUGIN_DIR/workspaces.sh\"" \
-  --subscribe workspace_state aerospace_workspace_change
+  --subscribe workspace_state aerospace_workspace_change bar_revealed
 sketchybar --add item wallpaper_theme left --set wallpaper_theme drawing=off \
   updates=on update_freq=1 script="/bin/sh \"$PLUGIN_DIR/wallpaper.sh\"" \
   --subscribe wallpaper_theme system_woke

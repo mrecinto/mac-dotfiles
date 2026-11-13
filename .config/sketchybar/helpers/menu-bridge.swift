@@ -57,7 +57,28 @@ if CommandLine.arguments.contains("--self-test") {
     second.update(distance: 0, menuOpen: false, now: 1)
     first.update(distance: .infinity, menuOpen: false, now: 1.4)
     precondition(!first.hidden && second.hidden, "Moving screens must restore the old bar")
-    print("Visibility and multi-monitor checks passed")
+    let returning = returnArguments(displays: displays, hidden: [20], offset: -40, frames: 9)
+    precondition(Array(returning.prefix(5)) == ["--bar", "y_offset=-40", "--bar", "hidden=off", "display=1"],
+        "Returning bars must be positioned offscreen before unhiding")
+    precondition(!returning.contains("--update"), "Returning must not force all status scripts")
+    let repaintTargets = returning.indices.compactMap { index -> String? in
+        guard returning[index] == "--set", index + 3 < returning.count else { return nil }
+        precondition(returning[index + 2] == "drawing=off" && returning[index + 3] == "drawing=on",
+            "Every workspace must be invalidated without an intermediate frame")
+        return returning[index + 1]
+    }
+    precondition(repaintTargets == (1...10).map({ "space.\($0)" }) + ["special"],
+        "Repaint must target all workspace names explicitly, without regex dialect assumptions")
+    precondition(Array(returning.suffix(2)) == ["--trigger", "bar_revealed"],
+        "Returning must refresh workspace state without blocking the slide")
+    var quickReturn = VisibilityState()
+    quickReturn.update(distance: 0, menuOpen: false, now: 0)
+    quickReturn.update(distance: 100, menuOpen: false, now: 1)
+    quickReturn.update(distance: 100, menuOpen: false, now: 1.1)
+    precondition(quickReturn.hidden, "Keep the brief dismissal grace period")
+    quickReturn.update(distance: 100, menuOpen: false, now: 1.16)
+    precondition(!quickReturn.hidden, "Return promptly after the grace period")
+    print("Visibility, return ordering, and multi-monitor checks passed")
     exit(0)
 }
 
@@ -96,6 +117,22 @@ func visibilityArguments(displays: [BarDisplay], hidden: Set<CGDirectDisplayID>)
     return ["--bar", "hidden=off", "display=\(selection)", "y_offset=0"]
 }
 
+func returnArguments(displays: [BarDisplay], hidden: Set<CGDirectDisplayID>,
+                     offset: Int, frames: Int) -> [String] {
+    var visibility = visibilityArguments(displays: displays, hidden: hidden)
+    visibility.removeLast() // Keep the offscreen offset until the slide begins.
+    // One IPC request positions, unhides, repaints, and starts the animation.
+    // Use explicit names: SketchyBar's basic regex parser does not support
+    // extended grouping/alternation. Invalidate every workspace window even
+    // when its current model values already match the new workspace state.
+    var arguments = ["--bar", "y_offset=\(offset)"] + visibility
+    for name in (1...10).map({ "space.\($0)" }) + ["special"] {
+        arguments += ["--set", name, "drawing=off", "drawing=on"]
+    }
+    return arguments + ["--animate", "sin", String(frames), "--bar", "y_offset=0",
+                        "--trigger", "bar_revealed"]
+}
+
 let barPath = CommandLine.arguments.dropFirst().first ?? "/opt/homebrew/bin/sketchybar"
 @discardableResult
 func runBar(_ arguments: [String], captureOutput: Bool = false) -> Data? {
@@ -105,12 +142,16 @@ func runBar(_ arguments: [String], captureOutput: Bool = false) -> Data? {
     let output = Pipe()
     process.standardOutput = captureOutput ? output : FileHandle.nullDevice
     process.standardError = FileHandle.nullDevice
+    let completed = DispatchSemaphore(value: 0)
+    process.terminationHandler = { _ in completed.signal() }
     do {
         try process.run()
-        // A stalled SketchyBar IPC request must not freeze visibility monitoring.
-        let deadline = Date().addingTimeInterval(1)
-        while process.isRunning && Date() < deadline { Thread.sleep(forTimeInterval: 0.01) }
-        if process.isRunning { process.terminate(); return nil }
+        // Wake as soon as IPC completes, rather than sleeping in 10 ms steps.
+        // Keep a timeout so an unresponsive bar cannot stall monitoring forever.
+        guard completed.wait(timeout: .now() + .milliseconds(250)) == .success else {
+            process.terminate()
+            return nil
+        }
         guard process.terminationStatus == 0 else { return nil }
         return captureOutput ? output.fileHandleForReading.readDataToEndOfFile() : Data()
     }
@@ -163,19 +204,39 @@ let slideDuration = Double(slideFrames) / 60
 let slideOffset = -40 // Clear the configured 36-point bar, including its edge.
 var appliedHidden: Set<CGDirectDisplayID> = []
 var pendingHide: (displays: Set<CGDirectDisplayID>, deadline: TimeInterval)?
-var settlingUntil: TimeInterval = 0
-var lastApplied = Date.timeIntervalSinceReferenceDate
+var nextDisplayRetry = ProcessInfo.processInfo.systemUptime + 2
+var cachedMenuBounds: [CGRect] = []
+var nextMenuCheck: TimeInterval = 0
 restoreBars()
 let timer = DispatchSource.makeTimerSource(queue: .main)
-timer.schedule(deadline: .now(), repeating: .milliseconds(50))
+timer.schedule(deadline: .now(), repeating: .milliseconds(16), leeway: .milliseconds(2))
 timer.setEventHandler {
     dismissPopupAfterOutsideClick()
     guard let mouse = CGEvent(source: nil)?.location else { return }
-    let now = Date.timeIntervalSinceReferenceDate
-    let refresh = now - lastApplied >= 2
-    if refresh, let updated = queryDisplays() { displays = updated }
-    let menuBounds = states.values.contains { $0.hidden } ? nativeMenuBounds() : []
-    var changed = false
+    let now = ProcessInfo.processInfo.systemUptime
+    // Display notifications handle topology changes. Retry only if startup or
+    // wake found no displays; avoid periodic IPC in the pointer tracking path.
+    if displays.isEmpty && now >= nextDisplayRetry {
+        displays = queryDisplays() ?? []
+        nextDisplayRetry = now + 2
+    }
+    // Inside the top strip, a hidden bar stays hidden regardless of menu state.
+    // Scan WindowServer only when the cursor leaves and dismissal is possible.
+    let needsMenuCheck = displays.contains { display in
+        guard states[display.displayID]?.hidden == true else { return false }
+        let bounds = CGDisplayBounds(display.displayID)
+        return !bounds.contains(mouse) || mouse.y - bounds.minY > 40
+    }
+    if needsMenuCheck {
+        if now >= nextMenuCheck {
+            cachedMenuBounds = nativeMenuBounds()
+            nextMenuCheck = now + 0.05
+        }
+    } else {
+        cachedMenuBounds = []
+        nextMenuCheck = 0
+    }
+    let menuBounds = cachedMenuBounds
     for display in displays {
         let bounds = CGDisplayBounds(display.displayID)
         let distance = bounds.contains(mouse) ? mouse.y - bounds.minY : CGFloat.infinity
@@ -183,10 +244,8 @@ timer.setEventHandler {
             bounds.contains(CGPoint(x: menu.minX + 1, y: menu.minY + 1))
         }
         var state = states[display.displayID] ?? VisibilityState()
-        let wasHidden = state.hidden
         state.update(distance: distance, menuOpen: menuOpen, now: now)
         states[display.displayID] = state
-        changed = changed || state.hidden != wasHidden
     }
     let hidden = Set(displays.filter { states[$0.displayID]?.hidden == true }.map { $0.displayID })
     if let pending = pendingHide, pending.displays != hidden {
@@ -196,34 +255,22 @@ timer.setEventHandler {
     }
     if let pending = pendingHide {
         if now >= pending.deadline {
-            runBar(visibilityArguments(displays: displays, hidden: pending.displays))
-            appliedHidden = pending.displays
-            pendingHide = nil
-            lastApplied = now
+            if runBar(visibilityArguments(displays: displays, hidden: pending.displays)) != nil {
+                appliedHidden = pending.displays
+                pendingHide = nil
+            }
         }
     } else if hidden != appliedHidden {
         if hidden.isSuperset(of: appliedHidden) {
-            runBar(["--set", "special", "popup.drawing=off",
-                    "--animate", "sin", String(slideFrames), "--bar", "y_offset=\(slideOffset)"])
-            pendingHide = (hidden, Date.timeIntervalSinceReferenceDate + slideDuration)
+            guard runBar(["--set", "special", "popup.drawing=off",
+                          "--animate", "sin", String(slideFrames), "--bar", "y_offset=\(slideOffset)"]) != nil else { return }
+            pendingHide = (hidden, ProcessInfo.processInfo.systemUptime + slideDuration)
         } else {
-            // Put returning bars above the screen before making them visible.
-            var arguments = visibilityArguments(displays: displays, hidden: hidden)
-            arguments[arguments.count - 1] = "y_offset=\(slideOffset)"
-            // Move while still hidden; unhiding first can expose a full frame
-            // at y=0 before SketchyBar applies the offscreen position.
-            runBar(["--bar", "y_offset=\(slideOffset)"])
-            runBar(arguments)
-            runBar(["--animate", "sin", String(returnFrames), "--bar", "y_offset=0"])
-            appliedHidden = hidden
-            settlingUntil = Date.timeIntervalSinceReferenceDate + Double(returnFrames) / 60
-            lastApplied = now
+            if runBar(returnArguments(displays: displays, hidden: hidden,
+                                      offset: slideOffset, frames: returnFrames)) != nil {
+                appliedHidden = hidden
+            }
         }
-    } else if settlingUntil > 0 && now >= settlingUntil {
-        settlingUntil = 0
-    } else if (changed || refresh) && now >= settlingUntil {
-        runBar(visibilityArguments(displays: displays, hidden: hidden))
-        lastApplied = now
     }
 }
 timer.resume()
@@ -232,10 +279,11 @@ let resetVisibility: (Notification) -> Void = { _ in
     states.removeAll()
     pendingHide = nil
     appliedHidden = []
-    settlingUntil = 0
+    cachedMenuBounds = []
+    nextMenuCheck = 0
     restoreBars()
     displays = queryDisplays() ?? []
-    lastApplied = 0 // Retry after the display server settles on wake/reconfiguration.
+    nextDisplayRetry = 0 // Retry after the display server settles on wake/reconfiguration.
 }
 
 let wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
