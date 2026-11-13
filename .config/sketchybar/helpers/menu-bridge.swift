@@ -15,7 +15,7 @@ struct VisibilityState {
             clearSince = nil
         } else {
             if clearSince == nil { clearSince = now }
-            if now - clearSince! >= 0.3 {
+            if now - clearSince! >= 0.15 {
                 hidden = false
                 clearSince = nil
             }
@@ -153,7 +153,17 @@ func dismissPopupAfterOutsideClick() {
 }
 
 var displays = queryDisplays() ?? []
+fputs("menu-bridge: connected to \(displays.count) displays\n", stderr)
 var states: [CGDirectDisplayID: VisibilityState] = [:]
+// SketchyBar animation durations are 60 Hz frame counts. Keep the bar alive
+// throughout the slide; changing display/hidden before it finishes cuts it off.
+let slideFrames = 12
+let returnFrames = 9
+let slideDuration = Double(slideFrames) / 60
+let slideOffset = -40 // Clear the configured 36-point bar, including its edge.
+var appliedHidden: Set<CGDirectDisplayID> = []
+var pendingHide: (displays: Set<CGDirectDisplayID>, deadline: TimeInterval)?
+var settlingUntil: TimeInterval = 0
 var lastApplied = Date.timeIntervalSinceReferenceDate
 restoreBars()
 let timer = DispatchSource.makeTimerSource(queue: .main)
@@ -178,8 +188,40 @@ timer.setEventHandler {
         states[display.displayID] = state
         changed = changed || state.hidden != wasHidden
     }
-    if changed || refresh {
-        let hidden = Set(displays.filter { states[$0.displayID]?.hidden == true }.map { $0.displayID })
+    let hidden = Set(displays.filter { states[$0.displayID]?.hidden == true }.map { $0.displayID })
+    if let pending = pendingHide, pending.displays != hidden {
+        // Reverse an interrupted reveal without leaving the bar offscreen.
+        pendingHide = nil
+        runBar(visibilityArguments(displays: displays, hidden: appliedHidden))
+    }
+    if let pending = pendingHide {
+        if now >= pending.deadline {
+            runBar(visibilityArguments(displays: displays, hidden: pending.displays))
+            appliedHidden = pending.displays
+            pendingHide = nil
+            lastApplied = now
+        }
+    } else if hidden != appliedHidden {
+        if hidden.isSuperset(of: appliedHidden) {
+            runBar(["--set", "special", "popup.drawing=off",
+                    "--animate", "sin", String(slideFrames), "--bar", "y_offset=\(slideOffset)"])
+            pendingHide = (hidden, Date.timeIntervalSinceReferenceDate + slideDuration)
+        } else {
+            // Put returning bars above the screen before making them visible.
+            var arguments = visibilityArguments(displays: displays, hidden: hidden)
+            arguments[arguments.count - 1] = "y_offset=\(slideOffset)"
+            // Move while still hidden; unhiding first can expose a full frame
+            // at y=0 before SketchyBar applies the offscreen position.
+            runBar(["--bar", "y_offset=\(slideOffset)"])
+            runBar(arguments)
+            runBar(["--animate", "sin", String(returnFrames), "--bar", "y_offset=0"])
+            appliedHidden = hidden
+            settlingUntil = Date.timeIntervalSinceReferenceDate + Double(returnFrames) / 60
+            lastApplied = now
+        }
+    } else if settlingUntil > 0 && now >= settlingUntil {
+        settlingUntil = 0
+    } else if (changed || refresh) && now >= settlingUntil {
         runBar(visibilityArguments(displays: displays, hidden: hidden))
         lastApplied = now
     }
@@ -188,6 +230,9 @@ timer.resume()
 
 let resetVisibility: (Notification) -> Void = { _ in
     states.removeAll()
+    pendingHide = nil
+    appliedHidden = []
+    settlingUntil = 0
     restoreBars()
     displays = queryDisplays() ?? []
     lastApplied = 0 // Retry after the display server settles on wake/reconfiguration.

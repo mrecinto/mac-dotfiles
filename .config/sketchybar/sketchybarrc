@@ -3,9 +3,10 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 . "$CONFIG_DIR/theme/colors.sh"
 . "$CONFIG_DIR/theme/popup.sh"
 
+# Keep a fixed window layer: switching topmost during a slide recreates the bar.
 # The Waybar CSS uses a top-to-bottom fade rather than a solid fill.
 sketchybar --bar position=top height=36 color=0x00000000 blur_radius=0 \
-  border_width=0 corner_radius=0 padding_left=0 padding_right=16 topmost=window
+  border_width=0 corner_radius=0 padding_left=0 padding_right=16 topmost=on
 sh "$CONFIG_DIR/helpers/gradient.sh"
 # Draw inside each bar window, so the image cannot spill onto another monitor.
 sketchybar --bar image="$THEME_CACHE/gradient.png" image.scale=0.5
