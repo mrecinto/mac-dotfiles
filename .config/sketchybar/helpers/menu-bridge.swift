@@ -36,8 +36,8 @@ if CommandLine.arguments.contains("--self-test") {
     state.update(distance: 200, menuOpen: false, now: 4)
     state.update(distance: 200, menuOpen: false, now: 4.4)
     precondition(!state.hidden, "The bar must return after menu dismissal")
-    let displays = [BarDisplay(arrangementID: 1, displayID: 10),
-                    BarDisplay(arrangementID: 2, displayID: 20)]
+    let displays = [BarDisplay(arrangementID: 1, displayID: 10, frame: CGRect(x: 0, y: 0, width: 1920, height: 1080)),
+                    BarDisplay(arrangementID: 2, displayID: 20, frame: CGRect(x: 1920, y: -200, width: 1440, height: 900))]
     precondition(visibilityArguments(displays: displays, hidden: [10])
         == ["--bar", "hidden=off", "display=2", "y_offset=0"],
         "Revealing menus on screen 1 must keep screen 2 visible")
@@ -48,6 +48,14 @@ if CommandLine.arguments.contains("--self-test") {
         .contains("display=all"), "Dismissal must restore every display")
     precondition(visibilityArguments(displays: displays, hidden: [10, 20])
         .contains("hidden=on"), "Both screens may independently show menus")
+    for x in [0.0, 1600, 1800, 1919.9] {
+        precondition(displays[0].distanceFromTop(CGPoint(x: x, y: 0)) == 0,
+            "The full top edge, including status icons, must hide the bar")
+    }
+    precondition(displays[0].distanceFromTop(CGPoint(x: 1920, y: 0)) == .infinity,
+        "The next monitor must not trigger this bar")
+    precondition(displays[1].distanceFromTop(CGPoint(x: 3359, y: -200)) == 0,
+        "Offset monitors must include their right edge")
     var first = VisibilityState()
     var second = VisibilityState()
     first.update(distance: 0, menuOpen: false, now: 0)
@@ -85,14 +93,42 @@ if CommandLine.arguments.contains("--self-test") {
 struct BarDisplay: Decodable {
     let arrangementID: Int
     let displayID: CGDirectDisplayID
+    let frame: CGRect
+
+    init(arrangementID: Int, displayID: CGDirectDisplayID, frame: CGRect) {
+        self.arrangementID = arrangementID
+        self.displayID = displayID
+        self.frame = frame
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        arrangementID = try container.decode(Int.self, forKey: .arrangementID)
+        displayID = try container.decode(CGDirectDisplayID.self, forKey: .displayID)
+        let geometry = try container.decode(Frame.self, forKey: .frame)
+        frame = CGRect(x: geometry.x, y: geometry.y, width: geometry.w, height: geometry.h)
+    }
+
+    func distanceFromTop(_ point: CGPoint) -> CGFloat {
+        frame.contains(point) ? point.y - frame.minY : .infinity
+    }
+
+    private struct Frame: Decodable {
+        let x: CGFloat
+        let y: CGFloat
+        let w: CGFloat
+        let h: CGFloat
+    }
+
     enum CodingKeys: String, CodingKey {
         case arrangementID = "arrangement-id"
         case displayID = "DirectDisplayID"
+        case frame
     }
 }
 
-// WindowServer and CGDisplayBounds share coordinates, including screens above
-// or to the left of the primary display. Do not mix them with NSScreen frames.
+// WindowServer and SketchyBar frames use top-left screen coordinates. Use the
+// bar's reported frame for hit testing so its entire width shares one geometry.
 func nativeMenuBounds() -> [CGRect] {
     guard let windows = CGWindowListCopyWindowInfo(
         [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
@@ -224,8 +260,7 @@ timer.setEventHandler {
     // Scan WindowServer only when the cursor leaves and dismissal is possible.
     let needsMenuCheck = displays.contains { display in
         guard states[display.displayID]?.hidden == true else { return false }
-        let bounds = CGDisplayBounds(display.displayID)
-        return !bounds.contains(mouse) || mouse.y - bounds.minY > 40
+        return display.distanceFromTop(mouse) > 40
     }
     if needsMenuCheck {
         if now >= nextMenuCheck {
@@ -238,8 +273,8 @@ timer.setEventHandler {
     }
     let menuBounds = cachedMenuBounds
     for display in displays {
-        let bounds = CGDisplayBounds(display.displayID)
-        let distance = bounds.contains(mouse) ? mouse.y - bounds.minY : CGFloat.infinity
+        let bounds = display.frame
+        let distance = display.distanceFromTop(mouse)
         let menuOpen = menuBounds.contains { menu in
             bounds.contains(CGPoint(x: menu.minX + 1, y: menu.minY + 1))
         }

@@ -20,8 +20,9 @@ macos_default = [
 [open]
 
 rules = [
-  # MP4 videos — macOS default app
+  # Videos — macOS default app
   { url = "*.mp4", use = "macos_default" },
+  { url = "*.mov", use = "macos_default" },
 
   # Xournal++ — MUST be before inode/x-empty
   { url = "*.xopp", use = "xournalpp" },
